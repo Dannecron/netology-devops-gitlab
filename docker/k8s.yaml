@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: python-api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-api-deployment
+  namespace: python-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello
+  template:
+    metadata:
+      namespace: hello-world
+      labels:
+        app: hello
+    spec:
+      containers:
+        - name: python_api
+          image: cr.yandex/__YA_REGISTRY__/__DOCKER_IMAGE__
+          imagePullPolicy: Always
