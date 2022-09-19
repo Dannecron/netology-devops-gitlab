@@ -58,8 +58,6 @@ test-api:
 deploy:
   image: gcr.io/cloud-builders/kubectl:latest
   stage: deploy
-  variables:
-    DOCKER_IMAGE: "cr.yandex/${YA_DOCKER_REGISTRY}/${DOCKER_IMAGE}"
   needs:
     - pre-build
     - docker-build

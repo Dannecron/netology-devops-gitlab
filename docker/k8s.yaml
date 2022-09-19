@@ -13,12 +13,12 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: hello
+      app: python-api
   template:
     metadata:
-      namespace: hello-world
+      namespace: python-api
       labels:
-        app: hello
+        app: python-api
     spec:
       containers:
         - name: python_api
