@@ -69,3 +69,5 @@ deploy:
     - sed -i "s/__YA_REGISTRY__/${YA_DOCKER_REGISTRY}/" docker/k8s.yaml
     - sed -i "s/__DOCKER_IMAGE__/${DOCKER_IMAGE}/" docker/k8s.yaml
     - kubectl apply -f docker/k8s.yaml
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
