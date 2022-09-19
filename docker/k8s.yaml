@@ -21,6 +21,6 @@ spec:
         app: python-api
     spec:
       containers:
-        - name: python_api
+        - name: python-api
           image: cr.yandex/__YA_REGISTRY__/__DOCKER_IMAGE__
           imagePullPolicy: Always
