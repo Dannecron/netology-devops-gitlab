@@ -51,7 +51,7 @@ test-api:
       alias: python-api
   needs:
     - pre-build
-    - docker-build
+    - build
   script:
     - ./test/validate_api.sh
 
@@ -60,6 +60,7 @@ deploy:
   stage: deploy
   needs:
     - pre-build
+    - build
   script:
     - kubectl config set-cluster k8s --server="$KUBE_URL" --insecure-skip-tls-verify=true
     - kubectl config set-credentials admin --token="$KUBE_TOKEN"
