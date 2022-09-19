@@ -16,28 +16,26 @@ pre-build:
         tag="$CI_COMMIT_REF_SLUG"
         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
       fi
-    - echo "DOCKER_IMAGE=$CI_REGISTRY_IMAGE:${tag}"" > docker.env
+    - echo "DOCKER_IMAGE=netology-devops-gitlab:${tag}" > docker.env
   artifacts:
     reports:
       dotenv:
         docker.env
 
-# todo взять скрипт с yandex
 docker-build:
-  # Use the official docker image.
-  image: docker:latest
   stage: build
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://localhost:2375/
+  image: cr.yandex/yc/metadata-token-docker-helper:0.2
   services:
-    - docker:dind
+    - docker:19.03.1-dind
   needs:
     - pre-build
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-  # All other branches are tagged with the escaped branch name (commit ref slug)
   script:
-    - docker build --pull -t "$DOCKER_IMAGE" -f docker/Dockerfile .
-    - docker push "$DOCKER_IMAGE"
-  # Run this job in a branch where a Dockerfile exists
+    - docker build --pull -t "cr.yandex/${YA_DOCKER_REGISTRY}/${DOCKER_IMAGE}" -f docker/Dockerfile .
+    - docker push "cr.yandex/${YA_DOCKER_REGISTRY}/${DOCKER_IMAGE}"
   rules:
     - if: $CI_COMMIT_BRANCH
       exists:
@@ -49,23 +47,23 @@ test-api:
   variables:
     PYTHON_API_HOSTNAME: python-api
   services:
-    - name: $DOCKER_IMAGE
+    - name: "cr.yandex/${YA_DOCKER_REGISTRY}/${DOCKER_IMAGE}"
       alias: python-api
   needs:
     - pre-build
     - docker-build
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
     - ./test/validate_api.sh
 
-# todo взять скрипт с yandex
-deploy-main:
-  image: docker:latest
+deploy:
+  image: gcr.io/cloud-builders/kubectl:latest
   stage: deploy
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  needs:
+    - pre-build
   script:
-    - echo 1
+    - kubectl config set-cluster k8s --server="$KUBE_URL" --insecure-skip-tls-verify=true
+    - kubectl config set-credentials admin --token="$KUBE_TOKEN"
+    - kubectl config set-context default --cluster=k8s --user=admin
+    - kubectl config use-context default
+    - sed -i "s/__VERSION__/${DOCKER_IMAGE}/" k8s.yaml
+    - kubectl apply -f k8s.yaml
